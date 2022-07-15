@@ -33,8 +33,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 @interface SVProgressHUD ()
 
-@property (nonatomic, strong) NSTimer *graceTimer;
-@property (nonatomic, strong) NSTimer *fadeOutTimer;
+@property (nonatomic, strong) NSTimer *showTimer;
+@property (nonatomic, strong) NSTimer *hideTimer;
 
 @property (nonatomic, strong) UIControl *controlView;
 @property (nonatomic, strong) UIView *backgroundView;
@@ -93,6 +93,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 + (void)setDefaultAnimationType:(SVProgressHUDAnimationType)type {
     [self sharedView].defaultAnimationType = type;
+}
+
++ (void)setDefaultShowHideEffect:(SVProgressHUDShowHideEffect)effect {
+    [self sharedView].defaultShowHideEffect = effect;
 }
 
 + (void)setContainerView:(nullable UIView*)containerView {
@@ -191,12 +195,12 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [self sharedView].maximumDismissTimeInterval = interval;
 }
 
-+ (void)setFadeInAnimationDuration:(NSTimeInterval)duration {
-    [self sharedView].fadeInAnimationDuration = duration;
++ (void)setShowAnimationDuration:(NSTimeInterval)duration {
+    [self sharedView].showAnimationDuration = duration;
 }
 
-+ (void)setFadeOutAnimationDuration:(NSTimeInterval)duration {
-    [self sharedView].fadeOutAnimationDuration = duration;
++ (void)setHideAnimationDuration:(NSTimeInterval)duration {
+    [self sharedView].hideAnimationDuration = duration;
 }
 
 + (void)setMaxSupportedWindowLevel:(UIWindowLevel)windowLevel {
@@ -333,12 +337,12 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 #endif
 }
 
-+ (void)showImage:(UIImage*)image status:(NSString*)status {
++ (void)showImage:(nullable UIImage*)image status:(NSString*)status {
     NSTimeInterval displayInterval = [self displayDurationForString:status];
     [[self sharedView] showImage:image status:status duration:displayInterval];
 }
 
-+ (void)showImage:(UIImage*)image status:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
++ (void)showImage:(nullable UIImage*)image status:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
     SVProgressHUDMaskType existingMaskType = [self sharedView].defaultMaskType;
     [self setDefaultMaskType:maskType];
     [self showImage:image status:status];
@@ -409,6 +413,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         _defaultMaskType = SVProgressHUDMaskTypeNone;
         _defaultStyle = SVProgressHUDStyleLight;
         _defaultAnimationType = SVProgressHUDAnimationTypeFlat;
+        _defaultShowHideEffect = SVProgressHUDShowHideEffectFade;
         _minimumSize = CGSizeZero;
         _font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
         
@@ -433,8 +438,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         _minimumDismissTimeInterval = 5.0;
         _maximumDismissTimeInterval = CGFLOAT_MAX;
 
-        _fadeInAnimationDuration = SVProgressHUDDefaultAnimationDuration;
-        _fadeOutAnimationDuration = SVProgressHUDDefaultAnimationDuration;
+        _showAnimationDuration = SVProgressHUDDefaultAnimationDuration;
+        _hideAnimationDuration = SVProgressHUDDefaultAnimationDuration;
         
         _maxSupportedWindowLevel = UIWindowLevelNormal;
         
@@ -488,7 +493,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     hudWidth = SVProgressHUDHorizontalSpacing + MAX(labelWidth, contentWidth) + SVProgressHUDHorizontalSpacing;
     
     // |-spacing-content-(labelSpacing-label-)spacing-|
-    hudHeight = SVProgressHUDVerticalSpacing + labelHeight + contentHeight + SVProgressHUDVerticalSpacing;
+    hudHeight = contentHeight > 0 ? (SVProgressHUDVerticalSpacing + contentHeight) : 0;
+    hudHeight += labelHeight + SVProgressHUDVerticalSpacing;
     if(self.statusLabel.text && (imageUsed || progressUsed)){
         // Add spacing if both content and label are used
         hudHeight += SVProgressHUDLabelSpacing;
@@ -586,23 +592,23 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [self updateHUDFrame];
 }
 
-- (void)setGraceTimer:(NSTimer*)timer {
-    if(_graceTimer) {
-        [_graceTimer invalidate];
-        _graceTimer = nil;
+- (void)setShowTimer:(NSTimer*)timer {
+    if(_showTimer) {
+        [_showTimer invalidate];
+        _showTimer = nil;
     }
     if(timer) {
-        _graceTimer = timer;
+        _showTimer = timer;
     }
 }
 
-- (void)setFadeOutTimer:(NSTimer*)timer {
-    if(_fadeOutTimer) {
-        [_fadeOutTimer invalidate];
-        _fadeOutTimer = nil;
+- (void)setHideTimer:(NSTimer*)timer {
+    if(_hideTimer) {
+        [_hideTimer invalidate];
+        _hideTimer = nil;
     }
     if(timer) {
-        _fadeOutTimer = timer;
+        _hideTimer = timer;
     }
 }
 
@@ -765,13 +771,13 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         __strong SVProgressHUD *strongSelf = weakSelf;
         if(strongSelf){
-            if(strongSelf.fadeOutTimer) {
+            if(strongSelf.hideTimer) {
                 strongSelf.activityCount = 0;
             }
             
             // Stop timer
-            strongSelf.fadeOutTimer = nil;
-            strongSelf.graceTimer = nil;
+            strongSelf.hideTimer = nil;
+            strongSelf.showTimer = nil;
             
             // Update / Check view hierarchy to ensure the HUD is visible
             [strongSelf updateViewHierarchy];
@@ -824,10 +830,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
             
             // Fade in delayed if a grace time is set
             if (self.graceTimeInterval > 0.0 && self.backgroundView.alpha == 0.0f) {
-                strongSelf.graceTimer = [NSTimer timerWithTimeInterval:self.graceTimeInterval target:strongSelf selector:@selector(fadeIn:) userInfo:nil repeats:NO];
-                [[NSRunLoop mainRunLoop] addTimer:strongSelf.graceTimer forMode:NSRunLoopCommonModes];
+                strongSelf.showTimer = [NSTimer timerWithTimeInterval:self.graceTimeInterval target:strongSelf selector:@selector(show:) userInfo:nil repeats:NO];
+                [[NSRunLoop mainRunLoop] addTimer:strongSelf.showTimer forMode:NSRunLoopCommonModes];
             } else {
-                [strongSelf fadeIn:nil];
+                [strongSelf show:nil];
             }
             
             // Tell the Haptics Generator to prepare for feedback, which may come soon
@@ -840,14 +846,14 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     }];
 }
 
-- (void)showImage:(UIImage*)image status:(NSString*)status duration:(NSTimeInterval)duration {
+- (void)showImage:(nullable UIImage*)image status:(NSString*)status duration:(NSTimeInterval)duration {
     __weak SVProgressHUD *weakSelf = self;
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         __strong SVProgressHUD *strongSelf = weakSelf;
         if(strongSelf){
             // Stop timer
-            strongSelf.fadeOutTimer = nil;
-            strongSelf.graceTimer = nil;
+            strongSelf.hideTimer = nil;
+            strongSelf.showTimer = nil;
             
             // Update / Check view hierarchy to ensure the HUD is visible
             [strongSelf updateViewHierarchy];
@@ -877,16 +883,16 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
             // Fade in delayed if a grace time is set
             // An image will be dismissed automatically. Thus pass the duration as userInfo.
             if (self.graceTimeInterval > 0.0 && self.backgroundView.alpha == 0.0f) {
-                strongSelf.graceTimer = [NSTimer timerWithTimeInterval:self.graceTimeInterval target:strongSelf selector:@selector(fadeIn:) userInfo:@(duration) repeats:NO];
-                [[NSRunLoop mainRunLoop] addTimer:strongSelf.graceTimer forMode:NSRunLoopCommonModes];
+                strongSelf.showTimer = [NSTimer timerWithTimeInterval:self.graceTimeInterval target:strongSelf selector:@selector(show:) userInfo:@(duration) repeats:NO];
+                [[NSRunLoop mainRunLoop] addTimer:strongSelf.showTimer forMode:NSRunLoopCommonModes];
             } else {
-                [strongSelf fadeIn:@(duration)];
+                [strongSelf show:@(duration)];
             }
         }
     }];
 }
 
-- (void)fadeIn:(id)data {
+- (void)show:(id)data {
     // Update the HUDs frame to the new content and position HUD
     [self updateHUDFrame];
     [self positionHUD:nil];
@@ -916,15 +922,30 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
                                                             object:self
                                                           userInfo:[self notificationUserInfo]];
         
-        // Zoom HUD a little to to make a nice appear / pop up animation
-        self.hudView.transform = self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1.3f, 1.3f);
+        switch (self.defaultShowHideEffect) {
+            case SVProgressHUDShowHideEffectFade:
+                // Zoom HUD a little to to make a nice appear / pop up animation
+                self.hudView.transform = self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1.3f, 1.3f);
+                break;
+            case SVProgressHUDShowHideEffectSlideIn:
+                self.hudView.transform = self.hudView.transform = CGAffineTransformTranslate(self.hudView.transform, 0, -50);
+                break;
+        }
         
         __block void (^animationsBlock)(void) = ^{
-            // Zoom HUD a little to make a nice appear / pop up animation
-            self.hudView.transform = CGAffineTransformIdentity;
             
-            // Fade in all effects (colors, blur, etc.)
-            [self fadeInEffects];
+            switch (self.defaultShowHideEffect) {
+                case SVProgressHUDShowHideEffectFade:
+                    // Zoom HUD a little to make a nice appear / pop up animation
+                    self.hudView.transform = CGAffineTransformIdentity;
+                    // Fade in all effects (colors, blur, etc.)
+                    [self fadeInEffects];
+                    break;
+                case SVProgressHUDShowHideEffectSlideIn:
+                    self.hudView.transform = CGAffineTransformIdentity;
+                    [self fadeInEffects];
+                    break;
+            }
         };
         
         __block void (^completionBlock)(void) = ^{
@@ -946,23 +967,32 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
                 // Dismiss automatically if a duration was passed as userInfo. We start a timer
                 // which then will call dismiss after the predefined duration
                 if(duration){
-                    self.fadeOutTimer = [NSTimer timerWithTimeInterval:[(NSNumber *)duration doubleValue] target:self selector:@selector(dismiss) userInfo:nil repeats:NO];
-                    [[NSRunLoop mainRunLoop] addTimer:self.fadeOutTimer forMode:NSRunLoopCommonModes];
+                    self.hideTimer = [NSTimer timerWithTimeInterval:[(NSNumber *)duration doubleValue] target:self selector:@selector(dismiss) userInfo:nil repeats:NO];
+                    [[NSRunLoop mainRunLoop] addTimer:self.hideTimer forMode:NSRunLoopCommonModes];
                 }
             }
         };
         
         // Animate appearance
-        if (self.fadeInAnimationDuration > 0) {
-            // Animate appearance
-            [UIView animateWithDuration:self.fadeInAnimationDuration
+        if (self.showAnimationDuration > 0) {
+            [UIView animateWithDuration:self.showAnimationDuration
                                   delay:0
+                 usingSpringWithDamping:0.6
+                  initialSpringVelocity:0.7
                                 options:(UIViewAnimationOptions) (UIViewAnimationOptionAllowUserInteraction | UIViewAnimationCurveEaseIn | UIViewAnimationOptionBeginFromCurrentState)
                              animations:^{
-                                 animationsBlock();
-                             } completion:^(BOOL finished) {
-                                 completionBlock();
-                             }];
+                                animationsBlock();
+                            } completion:^(BOOL finished) {
+                                completionBlock();
+                            }];
+//            [UIView animateWithDuration:self.showAnimationDuration
+//                                  delay:0
+//                                options:(UIViewAnimationOptions) (UIViewAnimationOptionAllowUserInteraction | UIViewAnimationCurveEaseIn | UIViewAnimationOptionBeginFromCurrentState)
+//                             animations:^{
+//                                 animationsBlock();
+//                             } completion:^(BOOL finished) {
+//                                 completionBlock();
+//                             }];
         } else {
             animationsBlock();
             completionBlock();
@@ -978,8 +1008,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         // Dismiss automatically if a duration was passed as userInfo. We start a timer
         // which then will call dismiss after the predefined duration
         if(duration){
-            self.fadeOutTimer = [NSTimer timerWithTimeInterval:[(NSNumber *)duration doubleValue] target:self selector:@selector(dismiss) userInfo:nil repeats:NO];
-            [[NSRunLoop mainRunLoop] addTimer:self.fadeOutTimer forMode:NSRunLoopCommonModes];
+            self.hideTimer = [NSTimer timerWithTimeInterval:[(NSNumber *)duration doubleValue] target:self selector:@selector(dismiss) userInfo:nil repeats:NO];
+            [[NSRunLoop mainRunLoop] addTimer:self.hideTimer forMode:NSRunLoopCommonModes];
         }
     }
 }
@@ -1003,11 +1033,20 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
             strongSelf.activityCount = 0;
             
             __block void (^animationsBlock)(void) = ^{
-                // Shrink HUD a little to make a nice disappear animation
-                strongSelf.hudView.transform = CGAffineTransformScale(strongSelf.hudView.transform, 1/1.3f, 1/1.3f);
                 
-                // Fade out all effects (colors, blur, etc.)
-                [strongSelf fadeOutEffects];
+                switch (self.defaultShowHideEffect) {
+                    case SVProgressHUDShowHideEffectFade:
+                        // Shrink HUD a little to make a nice disappear animation
+                        strongSelf.hudView.transform = CGAffineTransformScale(strongSelf.hudView.transform, 1/1.3f, 1/1.3f);
+                        
+                        // Fade out all effects (colors, blur, etc.)
+                        [strongSelf fadeOutEffects];
+                        break;
+                    case SVProgressHUDShowHideEffectSlideIn:
+                        strongSelf.hudView.transform = CGAffineTransformTranslate(strongSelf.hudView.transform, 0, -50);
+                        [strongSelf fadeOutEffects];
+                        break;
+                }
             };
             
             __block void (^completionBlock)(void) = ^{
@@ -1055,11 +1094,11 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
             dispatch_after(dipatchTime, dispatch_get_main_queue(), ^{
                 
                 // Stop timer
-                strongSelf.graceTimer = nil;
+                strongSelf.showTimer = nil;
                 
-                if (strongSelf.fadeOutAnimationDuration > 0) {
+                if (strongSelf.hideAnimationDuration > 0) {
                     // Animate appearance
-                    [UIView animateWithDuration:strongSelf.fadeOutAnimationDuration
+                    [UIView animateWithDuration:strongSelf.hideAnimationDuration
                                           delay:0
                                         options:(UIViewAnimationOptions) (UIViewAnimationOptionAllowUserInteraction | UIViewAnimationCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState)
                                      animations:^{
@@ -1108,7 +1147,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         }
         
         if(!_indefiniteAnimatedView){
-            _indefiniteAnimatedView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+            _indefiniteAnimatedView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
         }
         
         // Update styling
@@ -1461,6 +1500,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     if (!_isInitializing) _defaultAnimationType = animationType;
 }
 
+- (void)setDefaultShowHideEffect:(SVProgressHUDShowHideEffect)defaultShowHideEffect {
+    if (!_isInitializing) _defaultShowHideEffect = defaultShowHideEffect;
+}
+
 - (void)setContainerView:(UIView *)containerView {
     if (!_isInitializing) _containerView = containerView;
 }
@@ -1533,12 +1576,12 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     if (!_isInitializing) _minimumDismissTimeInterval = minimumDismissTimeInterval;
 }
 
-- (void)setFadeInAnimationDuration:(NSTimeInterval)duration {
-    if (!_isInitializing) _fadeInAnimationDuration = duration;
+- (void)setShowAnimationDuration:(NSTimeInterval)duration {
+    if (!_isInitializing) _showAnimationDuration = duration;
 }
 
-- (void)setFadeOutAnimationDuration:(NSTimeInterval)duration {
-    if (!_isInitializing) _fadeOutAnimationDuration = duration;
+- (void)setHideAnimationDuration:(NSTimeInterval)duration {
+    if (!_isInitializing) _hideAnimationDuration = duration;
 }
 
 - (void)setMaxSupportedWindowLevel:(UIWindowLevel)maxSupportedWindowLevel {

@@ -36,6 +36,11 @@ typedef NS_ENUM(NSUInteger, SVProgressHUDAnimationType) {
     SVProgressHUDAnimationTypeNative NS_SWIFT_NAME(native)  // iOS native UIActivityIndicatorView
 };
 
+typedef NS_ENUM(NSUInteger, SVProgressHUDShowHideEffect) {
+    SVProgressHUDShowHideEffectFade NS_SWIFT_NAME(fade),
+    SVProgressHUDShowHideEffectSlideIn NS_SWIFT_NAME(slideIn)
+};
+
 typedef void (^SVProgressHUDShowCompletion)(void);
 typedef void (^SVProgressHUDDismissCompletion)(void);
 
@@ -46,6 +51,7 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 @property (assign, nonatomic) SVProgressHUDStyle defaultStyle UI_APPEARANCE_SELECTOR;                   // default is SVProgressHUDStyleLight
 @property (assign, nonatomic) SVProgressHUDMaskType defaultMaskType UI_APPEARANCE_SELECTOR;             // default is SVProgressHUDMaskTypeNone
 @property (assign, nonatomic) SVProgressHUDAnimationType defaultAnimationType UI_APPEARANCE_SELECTOR;   // default is SVProgressHUDAnimationTypeFlat
+@property (assign, nonatomic) SVProgressHUDShowHideEffect defaultShowHideEffect UI_APPEARANCE_SELECTOR; // default is SVProgressHUDShowHideEffectFade
 @property (strong, nonatomic, nullable) UIView *containerView;                                          // if nil then use default window level
 @property (assign, nonatomic) CGSize minimumSize UI_APPEARANCE_SELECTOR;                        // default is CGSizeZero, can be used to avoid resizing for a larger message
 @property (assign, nonatomic) CGFloat ringThickness UI_APPEARANCE_SELECTOR;                     // default is 2 pt
@@ -69,8 +75,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 
 @property (assign, nonatomic) UIOffset offsetFromCenter UI_APPEARANCE_SELECTOR; // default is 0, 0
 
-@property (assign, nonatomic) NSTimeInterval fadeInAnimationDuration UI_APPEARANCE_SELECTOR;    // default is 0.15
-@property (assign, nonatomic) NSTimeInterval fadeOutAnimationDuration UI_APPEARANCE_SELECTOR;   // default is 0.15
+@property (assign, nonatomic) NSTimeInterval showAnimationDuration UI_APPEARANCE_SELECTOR;    // default is 0.15
+@property (assign, nonatomic) NSTimeInterval hideAnimationDuration UI_APPEARANCE_SELECTOR;   // default is 0.15
 
 @property (assign, nonatomic) UIWindowLevel maxSupportedWindowLevel; // default is UIWindowLevelNormal
 
@@ -80,6 +86,7 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setDefaultStyle:(SVProgressHUDStyle)style;                      // default is SVProgressHUDStyleLight
 + (void)setDefaultMaskType:(SVProgressHUDMaskType)maskType;             // default is SVProgressHUDMaskTypeNone
 + (void)setDefaultAnimationType:(SVProgressHUDAnimationType)type;       // default is SVProgressHUDAnimationTypeFlat
++ (void)setDefaultShowHideEffect:(SVProgressHUDShowHideEffect)effect;   // default is SVProgressHUDShowHideEffectFade
 + (void)setContainerView:(nullable UIView*)containerView;               // default is window level
 + (void)setMinimumSize:(CGSize)minimumSize;                             // default is CGSizeZero, can be used to avoid resizing for a larger message
 + (void)setRingThickness:(CGFloat)ringThickness;                        // default is 2 pt
@@ -103,8 +110,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setGraceTimeInterval:(NSTimeInterval)interval;                  // default is 0 seconds
 + (void)setMinimumDismissTimeInterval:(NSTimeInterval)interval;         // default is 5.0 seconds
 + (void)setMaximumDismissTimeInterval:(NSTimeInterval)interval;         // default is infinite
-+ (void)setFadeInAnimationDuration:(NSTimeInterval)duration;            // default is 0.15 seconds
-+ (void)setFadeOutAnimationDuration:(NSTimeInterval)duration;           // default is 0.15 seconds
++ (void)setShowAnimationDuration:(NSTimeInterval)duration;            // default is 0.15 seconds
++ (void)setHideAnimationDuration:(NSTimeInterval)duration;           // default is 0.15 seconds
 + (void)setMaxSupportedWindowLevel:(UIWindowLevel)windowLevel;          // default is UIWindowLevelNormal
 + (void)setHapticsEnabled:(BOOL)hapticsEnabled;						    // default is NO
 + (void)setMotionEffectEnabled:(BOOL)motionEffectEnabled;               // default is YES
@@ -132,8 +139,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)showErrorWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showErrorWithStatus: and setDefaultMaskType: instead.")));
 
 // shows a image + status, use white PNGs with the imageViewSize (default is 28x28 pt)
-+ (void)showImage:(nonnull UIImage*)image status:(nullable NSString*)status;
-+ (void)showImage:(nonnull UIImage*)image status:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showImage:status: and setDefaultMaskType: instead.")));
++ (void)showImage:(nullable UIImage*)image status:(nullable NSString*)status;
++ (void)showImage:(nullable UIImage*)image status:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showImage:status: and setDefaultMaskType: instead.")));
 
 + (void)setOffsetFromCenter:(UIOffset)offset;
 + (void)resetOffsetFromCenter;
