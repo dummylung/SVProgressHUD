@@ -65,9 +65,12 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 @property (strong, nonatomic, nonnull) UIColor *backgroundLayerColor UI_APPEARANCE_SELECTOR;    // default is [UIColor colorWithWhite:0 alpha:0.4]
 @property (assign, nonatomic) CGSize imageViewSize UI_APPEARANCE_SELECTOR;                      // default is 28x28 pt
 @property (assign, nonatomic) BOOL shouldTintImages UI_APPEARANCE_SELECTOR;                     // default is YES
-@property (strong, nonatomic, nonnull) UIImage *infoImage UI_APPEARANCE_SELECTOR;               // default is the bundled info image provided by Freepik
-@property (strong, nonatomic, nonnull) UIImage *successImage UI_APPEARANCE_SELECTOR;            // default is the bundled success image provided by Freepik
-@property (strong, nonatomic, nonnull) UIImage *errorImage UI_APPEARANCE_SELECTOR;              // default is the bundled error image provided by Freepik
+@property (strong, nonatomic, nullable) UIImage *infoImage UI_APPEARANCE_SELECTOR;               // default is the bundled info image provided by Freepik
+@property (strong, nonatomic, nullable) UIImage *successImage UI_APPEARANCE_SELECTOR;            // default is the bundled success image provided by Freepik
+@property (strong, nonatomic, nullable) UIImage *errorImage UI_APPEARANCE_SELECTOR;              // default is the bundled error image provided by Freepik
+@property (strong, nonatomic, nullable) UIColor *infoColor UI_APPEARANCE_SELECTOR;               // default is the bundled info image provided by Freepik
+@property (strong, nonatomic, nullable) UIColor *successColor UI_APPEARANCE_SELECTOR;            // default is the bundled success image provided by Freepik
+@property (strong, nonatomic, nullable) UIColor *errorColor UI_APPEARANCE_SELECTOR;              // default is the bundled error image provided by Freepik
 @property (strong, nonatomic, nonnull) UIView *viewForExtension UI_APPEARANCE_SELECTOR;         // default is nil, only used if #define SV_APP_EXTENSIONS is set
 @property (assign, nonatomic) NSTimeInterval graceTimeInterval;                                 // default is 0 seconds
 @property (assign, nonatomic) NSTimeInterval minimumDismissTimeInterval;                        // default is 5.0 seconds
@@ -103,9 +106,12 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setBackgroundLayerColor:(nonnull UIColor*)color;                // default is [UIColor colorWithWhite:0 alpha:0.5], only used for SVProgressHUDMaskTypeCustom
 + (void)setImageViewSize:(CGSize)size;                                  // default is 28x28 pt
 + (void)setShouldTintImages:(BOOL)shouldTintImages;                     // default is YES
-+ (void)setInfoImage:(nonnull UIImage*)image;                           // default is the bundled info image provided by Freepik
-+ (void)setSuccessImage:(nonnull UIImage*)image;                        // default is the bundled success image provided by Freepik
-+ (void)setErrorImage:(nonnull UIImage*)image;                          // default is the bundled error image provided by Freepik
++ (void)setInfoImage:(nullable UIImage*)image;                           // default is the bundled info image provided by Freepik
++ (void)setSuccessImage:(nullable UIImage*)image;                        // default is the bundled success image provided by Freepik
++ (void)setErrorImage:(nullable UIImage*)image;                          // default is the bundled error image provided by Freepik
++ (void)setInfoColor:(nullable UIColor*)color;                           // default is the bundled info image provided by Freepik
++ (void)setSuccessColor:(nullable UIColor*)color;                        // default is the bundled success image provided by Freepik
++ (void)setErrorColor:(nullable UIColor*)color;                          // default is the bundled error image provided by Freepik
 + (void)setViewForExtension:(nonnull UIView*)view;                      // default is nil, only used if #define SV_APP_EXTENSIONS is set
 + (void)setGraceTimeInterval:(NSTimeInterval)interval;                  // default is 0 seconds
 + (void)setMinimumDismissTimeInterval:(NSTimeInterval)interval;         // default is 5.0 seconds
@@ -140,7 +146,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 
 // shows a image + status, use white PNGs with the imageViewSize (default is 28x28 pt)
 + (void)showImage:(nullable UIImage*)image status:(nullable NSString*)status;
-+ (void)showImage:(nullable UIImage*)image status:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showImage:status: and setDefaultMaskType: instead.")));
++ (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable NSString*)status;
+- (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable NSString*)status duration:(NSTimeInterval)duration;
 
 + (void)setOffsetFromCenter:(UIOffset)offset;
 + (void)resetOffsetFromCenter;

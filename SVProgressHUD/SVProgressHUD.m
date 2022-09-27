@@ -167,16 +167,28 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [self sharedView].shouldTintImages = shouldTintImages;
 }
 
-+ (void)setInfoImage:(UIImage*)image {
++ (void)setInfoImage:(nullable UIImage*)image {
     [self sharedView].infoImage = image;
 }
 
-+ (void)setSuccessImage:(UIImage*)image {
++ (void)setSuccessImage:(nullable UIImage*)image {
     [self sharedView].successImage = image;
 }
 
-+ (void)setErrorImage:(UIImage*)image {
++ (void)setErrorImage:(nullable UIImage*)image {
     [self sharedView].errorImage = image;
+}
+
++ (void)setInfoColor:(nullable UIColor*)color {
+    [self sharedView].infoColor = color;
+}
+
++ (void)setSuccessColor:(nullable UIColor*)color {
+    [self sharedView].successColor = color;
+}
+
++ (void)setErrorColor:(nullable UIColor*)color {
+    [self sharedView].errorColor = color;
 }
 
 + (void)setViewForExtension:(UIView*)view {
@@ -265,7 +277,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 #pragma mark - Show, then automatically dismiss methods
 
 + (void)showInfoWithStatus:(NSString*)status {
-    [self showImage:[self sharedView].infoImage status:status];
+    [self showImage:[self sharedView].infoImage color:[self sharedView].infoColor status:status];
     
 #if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (@available(iOS 10.0, *)) {
@@ -284,7 +296,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 }
 
 + (void)showSuccessWithStatus:(NSString*)status {
-    [self showImage:[self sharedView].successImage status:status];
+    [self showImage:[self sharedView].successImage color:[self sharedView].successColor status:status];
 
 #if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (@available(iOS 10, *)) {
@@ -311,7 +323,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 }
 
 + (void)showErrorWithStatus:(NSString*)status {
-    [self showImage:[self sharedView].errorImage status:status];
+    [self showImage:[self sharedView].errorImage color:[self sharedView].errorColor status:status];
     
 #if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (@available(iOS 10.0, *)) {
@@ -338,8 +350,12 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 }
 
 + (void)showImage:(nullable UIImage*)image status:(NSString*)status {
+    [self showImage:image color:nil status:status];
+}
+
++ (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable NSString*)status {
     NSTimeInterval displayInterval = [self displayDurationForString:status];
-    [[self sharedView] showImage:image status:status duration:displayInterval];
+    [[self sharedView] showImage:image color:color status:status duration:displayInterval];
 }
 
 + (void)showImage:(nullable UIImage*)image status:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
@@ -846,7 +862,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     }];
 }
 
-- (void)showImage:(nullable UIImage*)image status:(NSString*)status duration:(NSTimeInterval)duration {
+- (void)showImage:(nullable UIImage*)image color:(nullable UIColor *)color status:(NSString*)status duration:(NSTimeInterval)duration {
     __weak SVProgressHUD *weakSelf = self;
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         __strong SVProgressHUD *strongSelf = weakSelf;
@@ -879,6 +895,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
             // Update text
             strongSelf.statusLabel.hidden = status.length == 0;
             strongSelf.statusLabel.text = status;
+            strongSelf.statusLabel.textColor = color ? color : strongSelf.foregroundColorForStyle;
             
             // Fade in delayed if a grace time is set
             // An image will be dismissed automatically. Thus pass the duration as userInfo.
@@ -1351,7 +1368,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     }
     
     // Update styling
-    _statusLabel.textColor = self.foregroundColorForStyle;
+//    _statusLabel.textColor = self.foregroundColorForStyle;
     _statusLabel.font = self.font;
 
     return _statusLabel;
