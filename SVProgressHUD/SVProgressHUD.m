@@ -79,6 +79,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 #pragma mark - Setters
 
++ (void)setEnabled:(BOOL)enabled {
+    [self sharedView].isEnabled = enabled;
+}
+
 + (void)setStatus:(NSString*)status {
     [[self sharedView] setStatus:status];
 }
@@ -420,6 +424,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         self.indefiniteAnimatedView.alpha = 0.0f;
         self.ringView.alpha = self.backgroundRingView.alpha = 0.0f;
         
+        _isEnabled = true;
 
         _backgroundColor = [UIColor whiteColor];
         _foregroundColor = [UIColor blackColor];
@@ -910,6 +915,9 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 }
 
 - (void)show:(id)data {
+    if (![self isEnabled]) {
+        return;
+    }
     // Update the HUDs frame to the new content and position HUD
     [self updateHUDFrame];
     [self positionHUD:nil];
