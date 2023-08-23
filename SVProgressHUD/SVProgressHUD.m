@@ -738,7 +738,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     activeHeight -= keyboardHeight;
     
     CGFloat posX = CGRectGetMidX(orientationFrame);
-    CGFloat posY = floorf(activeHeight*0.45f);
+    CGFloat posY = floorf(activeHeight*0.5f);
 
     CGFloat rotateAngle = 0.0;
     CGPoint newCenter = CGPointMake(posX, posY);
