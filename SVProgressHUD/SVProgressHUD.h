@@ -41,10 +41,16 @@ typedef NS_ENUM(NSUInteger, SVProgressHUDShowHideEffect) {
     SVProgressHUDShowHideEffectSlideIn NS_SWIFT_NAME(slideIn)
 };
 
+typedef NS_ENUM(NSUInteger, SVProgressHUDLayoutType) {
+    SVProgressHUDLayoutTypeVertical NS_SWIFT_NAME(vertical),
+    SVProgressHUDLayoutTypeHorizontal NS_SWIFT_NAME(horizontal)
+};
+
 typedef void (^SVProgressHUDShowCompletion)(void);
 typedef void (^SVProgressHUDDismissCompletion)(void);
+typedef void (^SVProgressHUDTapAction)(void);
 
-@interface SVProgressHUD : UIView
+@interface SVProgressHUD : UIView <UITextViewDelegate>
 
 #pragma mark - Customization
 
@@ -52,8 +58,10 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 @property (assign, nonatomic) SVProgressHUDMaskType defaultMaskType UI_APPEARANCE_SELECTOR;             // default is SVProgressHUDMaskTypeNone
 @property (assign, nonatomic) SVProgressHUDAnimationType defaultAnimationType UI_APPEARANCE_SELECTOR;   // default is SVProgressHUDAnimationTypeFlat
 @property (assign, nonatomic) SVProgressHUDShowHideEffect defaultShowHideEffect UI_APPEARANCE_SELECTOR; // default is SVProgressHUDShowHideEffectFade
+@property (assign, nonatomic) SVProgressHUDLayoutType defaultLayoutType UI_APPEARANCE_SELECTOR;         // default is SVProgressHUDLayoutTypeVertical
 @property (strong, nonatomic, nullable) UIView *containerView;                                          // if nil then use default window level
 @property (assign, nonatomic) CGSize minimumSize UI_APPEARANCE_SELECTOR;                        // default is CGSizeZero, can be used to avoid resizing for a larger message
+@property (assign, nonatomic) CGSize maximumSize UI_APPEARANCE_SELECTOR;                        // default is CGSize(width: 300, height: 200)
 @property (assign, nonatomic) CGFloat ringThickness UI_APPEARANCE_SELECTOR;                     // default is 2 pt
 @property (assign, nonatomic) CGFloat ringRadius UI_APPEARANCE_SELECTOR;                        // default is 18 pt
 @property (assign, nonatomic) CGFloat ringNoTextRadius UI_APPEARANCE_SELECTOR;                  // default is 24 pt
@@ -75,6 +83,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 @property (assign, nonatomic) NSTimeInterval graceTimeInterval;                                 // default is 0 seconds
 @property (assign, nonatomic) NSTimeInterval minimumDismissTimeInterval;                        // default is 5.0 seconds
 @property (assign, nonatomic) NSTimeInterval maximumDismissTimeInterval;                        // default is CGFLOAT_MAX
+@property (assign, nonatomic) NSTimeInterval minimumDismissTimeIntervalAttributed;                        // default is 5.0 seconds
+@property (assign, nonatomic) NSTimeInterval maximumDismissTimeIntervalAttributed;                        // default is CGFLOAT_MAX
 
 @property (assign, nonatomic) UIOffset offsetFromCenter UI_APPEARANCE_SELECTOR; // default is 0, 0
 
@@ -88,12 +98,16 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 
 @property (assign, nonatomic) BOOL isEnabled; // default is YES
 
+@property (copy, nonatomic, nullable) SVProgressHUDTapAction tapAction;
+
 + (void)setDefaultStyle:(SVProgressHUDStyle)style;                      // default is SVProgressHUDStyleLight
 + (void)setDefaultMaskType:(SVProgressHUDMaskType)maskType;             // default is SVProgressHUDMaskTypeNone
 + (void)setDefaultAnimationType:(SVProgressHUDAnimationType)type;       // default is SVProgressHUDAnimationTypeFlat
 + (void)setDefaultShowHideEffect:(SVProgressHUDShowHideEffect)effect;   // default is SVProgressHUDShowHideEffectFade
++ (void)setDefaultLayoutType:(SVProgressHUDLayoutType)layoutType;       // default is SVProgressHUDLayoutType
 + (void)setContainerView:(nullable UIView*)containerView;               // default is window level
 + (void)setMinimumSize:(CGSize)minimumSize;                             // default is CGSizeZero, can be used to avoid resizing for a larger message
++ (void)setMaximumSize:(CGSize)maximumSize;                             // default is CGSize(width: 300, height: 200)
 + (void)setRingThickness:(CGFloat)ringThickness;                        // default is 2 pt
 + (void)setRingRadius:(CGFloat)radius;                                  // default is 18 pt
 + (void)setRingNoTextRadius:(CGFloat)radius;                            // default is 24 pt
@@ -118,6 +132,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setGraceTimeInterval:(NSTimeInterval)interval;                  // default is 0 seconds
 + (void)setMinimumDismissTimeInterval:(NSTimeInterval)interval;         // default is 5.0 seconds
 + (void)setMaximumDismissTimeInterval:(NSTimeInterval)interval;         // default is infinite
++ (void)setMinimumDismissTimeIntervalAttributed:(NSTimeInterval)interval;         // default is 5.0 seconds
++ (void)setMaximumDismissTimeIntervalAttributed:(NSTimeInterval)interval;         // default is infinite
 + (void)setShowAnimationDuration:(NSTimeInterval)duration;            // default is 0.15 seconds
 + (void)setHideAnimationDuration:(NSTimeInterval)duration;           // default is 0.15 seconds
 + (void)setMaxSupportedWindowLevel:(UIWindowLevel)windowLevel;          // default is UIWindowLevelNormal
@@ -129,28 +145,28 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 
 + (void)show;
 + (void)showWithMaskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use show and setDefaultMaskType: instead.")));
-+ (void)showWithStatus:(nullable NSString*)status;
-+ (void)showWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showWithStatus: and setDefaultMaskType: instead.")));
++ (void)showWithStatus:(nullable id)status;
++ (void)showWithStatus:(nullable id)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showWithStatus: and setDefaultMaskType: instead.")));
 
 + (void)showProgress:(float)progress;
 + (void)showProgress:(float)progress maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showProgress: and setDefaultMaskType: instead.")));
-+ (void)showProgress:(float)progress status:(nullable NSString*)status;
-+ (void)showProgress:(float)progress status:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showProgress:status: and setDefaultMaskType: instead.")));
++ (void)showProgress:(float)progress status:(nullable id)status;
++ (void)showProgress:(float)progress status:(nullable id)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showProgress:status: and setDefaultMaskType: instead.")));
 
-+ (void)setStatus:(nullable NSString*)status; // change the HUD loading status while it's showing
++ (void)setStatus:(nullable id)status; // change the HUD loading status while it's showing
 
 // stops the activity indicator, shows a glyph + status, and dismisses the HUD a little bit later
-+ (void)showInfoWithStatus:(nullable NSString*)status;
-+ (void)showInfoWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showInfoWithStatus: and setDefaultMaskType: instead.")));
-+ (void)showSuccessWithStatus:(nullable NSString*)status;
-+ (void)showSuccessWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showSuccessWithStatus: and setDefaultMaskType: instead.")));
-+ (void)showErrorWithStatus:(nullable NSString*)status;
-+ (void)showErrorWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showErrorWithStatus: and setDefaultMaskType: instead.")));
++ (void)showInfoWithStatus:(nullable id)status;
++ (void)showInfoWithStatus:(nullable id)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showInfoWithStatus: and setDefaultMaskType: instead.")));
++ (void)showSuccessWithStatus:(nullable id)status;
++ (void)showSuccessWithStatus:(nullable id)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showSuccessWithStatus: and setDefaultMaskType: instead.")));
++ (void)showErrorWithStatus:(nullable id)status;
++ (void)showErrorWithStatus:(nullable id)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showErrorWithStatus: and setDefaultMaskType: instead.")));
 
 // shows a image + status, use white PNGs with the imageViewSize (default is 28x28 pt)
-+ (void)showImage:(nullable UIImage*)image status:(nullable NSString*)status;
-+ (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable NSString*)status;
-- (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable NSString*)status duration:(NSTimeInterval)duration;
++ (void)showImage:(nullable UIImage*)image status:(nullable id)status;
++ (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable id)status;
+- (void)showImage:(nullable UIImage*)image color:(nullable UIColor*)color status:(nullable id)status duration:(NSTimeInterval)duration;
 
 + (void)setOffsetFromCenter:(UIOffset)offset;
 + (void)resetOffsetFromCenter;
@@ -160,6 +176,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)dismissWithCompletion:(nullable SVProgressHUDDismissCompletion)completion;
 + (void)dismissWithDelay:(NSTimeInterval)delay;
 + (void)dismissWithDelay:(NSTimeInterval)delay completion:(nullable SVProgressHUDDismissCompletion)completion;
+
++ (void)tapAction:(nullable SVProgressHUDTapAction)action;
 
 + (BOOL)isVisible;
 
