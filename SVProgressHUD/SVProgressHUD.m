@@ -508,6 +508,9 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
         _hapticsEnabled = NO;
         _motionEffectEnabled = YES;
         
+        _isAnimatingToShow = NO;
+        _isAnimatingToHide = NO;
+        
         // Accessibility support
         self.accessibilityIdentifier = @"SVProgressHUD";
         self.isAccessibilityElement = YES;
@@ -933,7 +936,9 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                 }
             } else {
                 // Cancel the ringLayer animation, then show the indefiniteAnimatedView
-                [strongSelf cancelRingLayerAnimation];
+                if (!strongSelf.isAnimatingToShow) {
+                    [strongSelf cancelRingLayerAnimation];
+                }
                 
                 // Add indefiniteAnimatedView to HUD
                 [strongSelf.hudView.contentView addSubview:strongSelf.indefiniteAnimatedView];
@@ -977,11 +982,13 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
             
             // Reset progress and cancel any running animation
             strongSelf.progress = SVProgressHUDUndefinedProgress;
-            [strongSelf cancelRingLayerAnimation];
+            if (!strongSelf.isAnimatingToShow) {
+                [strongSelf cancelRingLayerAnimation];
+            }
             [strongSelf cancelIndefiniteAnimatedViewAnimation];
             
             // Update imageView
-            if (self.shouldTintImages) {
+            if (strongSelf.shouldTintImages) {
                 if (image.renderingMode != UIImageRenderingModeAlwaysTemplate) {
                     strongSelf.imageView.image = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
                 } else {
@@ -1009,8 +1016,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
             
             // Fade in delayed if a grace time is set
             // An image will be dismissed automatically. Thus pass the duration as userInfo.
-            if (self.graceTimeInterval > 0.0 && self.backgroundView.alpha == 0.0f) {
-                strongSelf.showTimer = [NSTimer timerWithTimeInterval:self.graceTimeInterval target:strongSelf selector:@selector(show:) userInfo:@(duration) repeats:NO];
+            if (strongSelf.graceTimeInterval > 0.0 && strongSelf.backgroundView.alpha == 0.0f) {
+                strongSelf.showTimer = [NSTimer timerWithTimeInterval:strongSelf.graceTimeInterval target:strongSelf selector:@selector(show:) userInfo:@(duration) repeats:NO];
                 [[NSRunLoop mainRunLoop] addTimer:strongSelf.showTimer forMode:NSRunLoopCommonModes];
             } else {
                 [strongSelf show:@(duration)];
@@ -1055,10 +1062,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
         switch (self.defaultShowHideEffect) {
             case SVProgressHUDShowHideEffectFade:
                 // Zoom HUD a little to to make a nice appear / pop up animation
-                self.hudView.transform = self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1.3f, 1.3f);
+                self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1.3f, 1.3f);
                 break;
             case SVProgressHUDShowHideEffectSlideIn:
-                self.hudView.transform = self.hudView.transform = CGAffineTransformTranslate(self.hudView.transform, 0, -20);
+                self.hudView.transform = CGAffineTransformTranslate(self.hudView.transform, 0, -20);
                 break;
         }
         
@@ -1105,6 +1112,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
         
         // Animate appearance
         if (self.showAnimationDuration > 0) {
+            self.isAnimatingToShow = YES;
             [UIView animateWithDuration:self.showAnimationDuration
                                   delay:0
                  usingSpringWithDamping:0.5
@@ -1114,6 +1122,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                                 animationsBlock();
                             } completion:^(BOOL finished) {
                                 completionBlock();
+                                self.isAnimatingToShow = NO;
                             }];
 //            [UIView animateWithDuration:self.showAnimationDuration
 //                                  delay:0
@@ -1229,6 +1238,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                 strongSelf.showTimer = nil;
                 
                 if (strongSelf.hideAnimationDuration > 0) {
+                    strongSelf.isAnimatingToHide = YES;
                     // Animate appearance
                     [UIView animateWithDuration:strongSelf.hideAnimationDuration
                                           delay:0
@@ -1237,6 +1247,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                                          animationsBlock();
                                      } completion:^(BOOL finished) {
                                          completionBlock();
+                                         strongSelf.isAnimatingToHide = NO;
                                      }];
                 } else {
                     animationsBlock();

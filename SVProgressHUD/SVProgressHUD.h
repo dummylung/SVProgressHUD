@@ -91,6 +91,9 @@ typedef void (^SVProgressHUDTapAction)(void);
 @property (assign, nonatomic) NSTimeInterval showAnimationDuration UI_APPEARANCE_SELECTOR;    // default is 0.15
 @property (assign, nonatomic) NSTimeInterval hideAnimationDuration UI_APPEARANCE_SELECTOR;   // default is 0.15
 
+@property (assign, nonatomic) BOOL isAnimatingToShow UI_APPEARANCE_SELECTOR;
+@property (assign, nonatomic) BOOL isAnimatingToHide UI_APPEARANCE_SELECTOR;
+
 @property (assign, nonatomic) UIWindowLevel maxSupportedWindowLevel; // default is UIWindowLevelNormal
 
 @property (assign, nonatomic) BOOL hapticsEnabled;      // default is NO
