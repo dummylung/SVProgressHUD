@@ -48,6 +48,8 @@ typedef NS_ENUM(NSUInteger, SVProgressHUDLayoutType) {
 
 typedef void (^SVProgressHUDShowCompletion)(void);
 typedef void (^SVProgressHUDDismissCompletion)(void);
+
+typedef void (^SVProgressHUDDidDismissCallback)(void);
 typedef void (^SVProgressHUDTapAction)(void);
 
 @interface SVProgressHUD : UIView <UITextViewDelegate>
@@ -102,6 +104,7 @@ typedef void (^SVProgressHUDTapAction)(void);
 @property (assign, nonatomic) BOOL isEnabled; // default is YES
 
 @property (copy, nonatomic, nullable) SVProgressHUDTapAction tapAction;
+@property (copy, nonatomic, nullable) SVProgressHUDDidDismissCallback didDismissCallback;
 
 + (void)setDefaultStyle:(SVProgressHUDStyle)style;                      // default is SVProgressHUDStyleLight
 + (void)setDefaultMaskType:(SVProgressHUDMaskType)maskType;             // default is SVProgressHUDMaskTypeNone
@@ -180,7 +183,8 @@ typedef void (^SVProgressHUDTapAction)(void);
 + (void)dismissWithDelay:(NSTimeInterval)delay;
 + (void)dismissWithDelay:(NSTimeInterval)delay completion:(nullable SVProgressHUDDismissCompletion)completion;
 
-+ (void)tapAction:(nullable SVProgressHUDTapAction)action;
++ (void)setTapAction:(nullable SVProgressHUDTapAction)action;
++ (void)setDidDismissCallback:(nullable SVProgressHUDDidDismissCallback)callback;
 
 + (BOOL)isVisible;
 

@@ -431,8 +431,12 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
 
 #pragma mark - Tap Methods
 
-+ (void)tapAction:(nullable SVProgressHUDTapAction)action {
++ (void)setTapAction:(nullable SVProgressHUDTapAction)action {
     [self sharedView].tapAction = action;
+}
+
++ (void)setDidDismissCallback:(SVProgressHUDDidDismissCallback)callback {
+    [self sharedView].didDismissCallback = callback;
 }
 
 #pragma mark - Offset
@@ -1223,6 +1227,10 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                     if (completion) {
                         completion();
                     }
+                    
+                    if (strongSelf.didDismissCallback) {
+                        strongSelf.didDismissCallback();
+                    }
                 }
             };
             
@@ -1501,6 +1509,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
         _statusLabel.delegate = self;
         _statusLabel.textContainerInset = UIEdgeInsetsZero;
         _statusLabel.textContainer.lineFragmentPadding = 0;
+        _statusLabel.scrollEnabled = false;
     }
     if(!_statusLabel.superview) {
       [self.hudView.contentView addSubview:_statusLabel];
