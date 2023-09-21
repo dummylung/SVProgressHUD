@@ -576,6 +576,7 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
             // Add spacing if both content and label are used
             hudHeight += SVProgressHUDLabelSpacing;
         }
+        hudHeight = MAX(hudHeight, self.cornerRadius * 2);
     } else {
         if (labelHeight > contentHeight) {
             hudHeight = SVProgressHUDVerticalSpacing + labelHeight + SVProgressHUDVerticalSpacing;
