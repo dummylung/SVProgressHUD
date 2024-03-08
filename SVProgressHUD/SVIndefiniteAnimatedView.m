@@ -52,7 +52,6 @@
         _indefiniteAnimatedLayer.contentsScale = [[UIScreen mainScreen] scale];
         _indefiniteAnimatedLayer.frame = CGRectMake(0.0f, 0.0f, arcCenter.x*2, arcCenter.y*2);
         _indefiniteAnimatedLayer.fillColor = [UIColor clearColor].CGColor;
-        _indefiniteAnimatedLayer.strokeColor = self.strokeColor.CGColor;
         _indefiniteAnimatedLayer.lineWidth = self.strokeThickness;
         _indefiniteAnimatedLayer.lineCap = kCALineCapRound;
         _indefiniteAnimatedLayer.lineJoin = kCALineJoinBevel;
@@ -102,6 +101,7 @@
         [_indefiniteAnimatedLayer addAnimation:animationGroup forKey:@"progress"];
         
     }
+    _indefiniteAnimatedLayer.strokeColor = self.strokeColor.CGColor;
     return _indefiniteAnimatedLayer;
 }
 
