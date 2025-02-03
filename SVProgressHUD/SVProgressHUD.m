@@ -1118,6 +1118,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
             }
         };
         
+        [self addBlurEffects];
+        
         // Animate appearance
         if (self.showAnimationDuration > 0) {
             self.isAnimatingToShow = YES;
@@ -1594,21 +1596,25 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
 #endif
     return nil;
 }
-    
-- (void)fadeInEffects {
+
+- (void)addBlurEffects {
     if(self.defaultStyle != SVProgressHUDStyleCustom) {
-        // Add blur effect
         UIBlurEffectStyle blurEffectStyle = self.defaultStyle == SVProgressHUDStyleDark ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
         UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurEffectStyle];
         self.hudView.effect = blurEffect;
-        
+    } else {
+        self.hudView.effect = self.hudViewCustomBlurEffect;
+    }
+}
+
+- (void)fadeInEffects {
+    if(self.defaultStyle != SVProgressHUDStyleCustom) {
         // We omit UIVibrancy effect and use a suitable background color as an alternative.
         // This will make everything more readable. See the following for details:
         // https://www.omnigroup.com/developer/how-to-make-text-in-a-uivisualeffectview-readable-on-any-background
         
         self.hudView.backgroundColor = [self.backgroundColorForStyle colorWithAlphaComponent:0.6f];
     } else {
-        self.hudView.effect = self.hudViewCustomBlurEffect;
         self.hudView.backgroundColor =  self.backgroundColorForStyle;
     }
 
