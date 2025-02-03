@@ -974,6 +974,9 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
 }
 
 - (void)showImage:(nullable UIImage*)image color:(nullable UIColor *)color status:(id)status duration:(NSTimeInterval)duration {
+    if (![self isEnabled]) {
+        return;
+    }
     __weak SVProgressHUD *weakSelf = self;
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         __strong SVProgressHUD *strongSelf = weakSelf;
