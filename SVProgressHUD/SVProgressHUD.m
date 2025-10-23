@@ -559,12 +559,28 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
     
     if (self.defaultLayoutType == SVProgressHUDLayoutTypeVertical) {
         // |-spacing-content-spacing-|
-        hudWidth = SVProgressHUDHorizontalSpacing + MAX(labelWidth, contentWidth) + SVProgressHUDHorizontalSpacing;
+        hudWidth = MAX(labelWidth, contentWidth);
+        if (hudWidth == labelWidth) {
+            hudWidth += SVProgressHUDHorizontalSpacing * 2;
+        } else {
+            hudWidth += SVProgressHUDVerticalSpacing * 2;
+        }
+
     } else {
         // |-spacing-content-spacing-|
-        hudWidth = SVProgressHUDHorizontalSpacing + labelWidth + SVProgressHUDHorizontalSpacing;
         if (contentWidth > 0) {
-            hudWidth += - SVProgressHUDHorizontalSpacing + SVProgressHUDHorizontalSpacing * 0.5 + contentWidth + SVProgressHUDLabelSpacing;
+            if (labelWidth > 0) {
+                hudWidth = SVProgressHUDHorizontalSpacing + labelWidth + SVProgressHUDHorizontalSpacing;
+                hudWidth += - SVProgressHUDHorizontalSpacing + SVProgressHUDHorizontalSpacing * 0.5 + contentWidth + SVProgressHUDLabelSpacing;
+            } else {
+                hudWidth = SVProgressHUDHorizontalSpacing + contentWidth;
+            }
+        } else {
+            if (labelWidth > 0) {
+                hudWidth = SVProgressHUDHorizontalSpacing + labelWidth + SVProgressHUDHorizontalSpacing;
+            } else {
+                hudWidth = 0;
+            }
         }
     }
     
@@ -947,6 +963,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 6.0f;
                 
                 // Add indefiniteAnimatedView to HUD
                 [strongSelf.hudView.contentView addSubview:strongSelf.indefiniteAnimatedView];
+//                strongSelf.hudView.layer.borderColor = [UIColor redColor].CGColor;
+//                strongSelf.hudView.layer.borderWidth = 2.0;
                 if([strongSelf.indefiniteAnimatedView respondsToSelector:@selector(startAnimating)]) {
                     [(id)strongSelf.indefiniteAnimatedView startAnimating];
                 }
